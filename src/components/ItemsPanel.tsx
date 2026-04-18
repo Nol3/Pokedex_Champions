@@ -56,7 +56,7 @@ export function ItemsPanel({ items, language, selectedItem, onSelectItem }: Item
               className={`dex-item-search-result ${selectedItem === item.slug ? "selected" : ""}`}
               onClick={() => { onSelectItem(item.slug); setSearch(""); }}
             >
-              <img src={`${SPRITE}/${item.slug}.png`} alt="" className="dex-item-search-icon" />
+              <img src={`${SPRITE}/${item.slug}.png`} alt="" className="dex-item-search-icon" loading="lazy" />
               <span>{item.name}</span>
               {recommendedSlugs.has(item.slug) && <span className="dex-item-recommended-tag">✓</span>}
             </div>
@@ -68,7 +68,7 @@ export function ItemsPanel({ items, language, selectedItem, onSelectItem }: Item
         <div className="dex-item-selected">
           <span className="dex-item-selected-label">{language === "es" ? "Seleccionado:" : "Selected:"}</span>
           <div className="dex-item-selected-chip">
-            <img src={`${SPRITE}/${selectedItem}.png`} alt="" className="dex-item-chip-icon" />
+            <img src={`${SPRITE}/${selectedItem}.png`} alt="" className="dex-item-chip-icon" loading="lazy" />
             <span>{allCompetitiveItems.find((i) => i.slug === selectedItem)?.name ?? selectedItem}</span>
             <button type="button" className="dex-item-selected-remove" onClick={() => onSelectItem(null)}>×</button>
           </div>
@@ -85,7 +85,7 @@ export function ItemsPanel({ items, language, selectedItem, onSelectItem }: Item
                 className={`dex-item-rec ${selectedItem === item.slug ? "selected" : ""}`}
                 onClick={() => onSelectItem(item.slug)}
               >
-                <img src={item.imageUrl} alt="" className="dex-item-rec-icon" />
+                <img src={item.imageUrl} alt="" className="dex-item-rec-icon" loading="lazy" />
                 <span>{item.name}</span>
               </div>
             ))}

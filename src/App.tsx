@@ -37,6 +37,22 @@ async function fetchMoveDetails(slug: string): Promise<CompetitiveMove | null> {
   }
 }
 
+async function fetchMovesParallel(moveSlugs: string[], concurrency = 5): Promise<CompetitiveMove[]> {
+  const results: CompetitiveMove[] = [];
+  const queue = [...moveSlugs];
+  
+  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (queue.length > 0) {
+      const slug = queue.shift()!;
+      const move = await fetchMoveDetails(slug);
+      if (move) results.push(move);
+    }
+  });
+  
+  await Promise.all(workers);
+  return results;
+}
+
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>("es");
   const [query, setQuery] = useState("dragonite");
@@ -135,20 +151,10 @@ export default function App() {
       if (pokemonResponse.ok) {
         const pokemonData = await pokemonResponse.json();
         
-        // Obtener TODOS los movimientos del Pokémon
-        const movePromises = pokemonData.moves.map(async (m: { move: { name: string } }) => {
-          const moveDetails = await fetchMoveDetails(m.move.name);
-          return moveDetails;
-        });
+        const moveSlugs = pokemonData.moves.map((m: { move: { name: string } }) => m.move.name);
+        const movesWithParallel = await fetchMovesParallel(moveSlugs, 8);
         
-        const moveResults = await Promise.allSettled(movePromises);
-        for (const r of moveResults) {
-          if (r.status === "fulfilled" && r.value) {
-            allMovesData.push(r.value);
-          }
-        }
-        
-        setAllMoves(allMovesData);
+        setAllMoves(movesWithParallel);
         
         // Generar set de movimientos por defecto
         const defaultMoves = generateDefaultMoveSet(result, allMovesData);

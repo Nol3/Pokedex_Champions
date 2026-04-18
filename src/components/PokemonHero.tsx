@@ -49,7 +49,7 @@ export function PokemonHero({ pokemon, onSelect, onNavigate, isSelected, languag
             <div className="type-list" style={{ marginTop: "6px" }}>
               {pokemon.types.map((type) => (
                 <span key={type} className={`type-pill type-pill-icon ${typeColors[type] ?? ""}`}>
-                  {typeIcons[type] && <img src={typeIcons[type]} alt="" className="type-icon" />}
+                  {typeIcons[type] && <img src={typeIcons[type]} alt="" className="type-icon" loading="lazy" />}
                   {typeLabels[type]?.[language] ?? type}
                 </span>
               ))}
