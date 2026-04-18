@@ -37,20 +37,31 @@ async function fetchMoveDetails(slug: string): Promise<CompetitiveMove | null> {
   }
 }
 
-async function fetchMovesParallel(moveSlugs: string[], concurrency = 5): Promise<CompetitiveMove[]> {
+const moveCache = new Map<string, CompetitiveMove>();
+
+async function fetchMovesLazy(moveSlugs: string[]): Promise<CompetitiveMove[]> {
+  const needed = moveSlugs.filter((s) => !moveCache.has(s));
   const results: CompetitiveMove[] = [];
-  const queue = [...moveSlugs];
+  const queue = [...needed];
   
-  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+  const workers = Array.from({ length: Math.min(6, queue.length) }, async () => {
     while (queue.length > 0) {
       const slug = queue.shift()!;
+      if (moveCache.has(slug)) {
+        const cached = moveCache.get(slug)!;
+        results.push(cached);
+        continue;
+      }
       const move = await fetchMoveDetails(slug);
-      if (move) results.push(move);
+      if (move) {
+        moveCache.set(slug, move);
+        results.push(move);
+      }
     }
   });
   
   await Promise.all(workers);
-  return results;
+  return moveSlugs.map((s) => moveCache.get(s)).filter(Boolean) as CompetitiveMove[];
 }
 
 export default function App() {
@@ -152,12 +163,19 @@ export default function App() {
         const pokemonData = await pokemonResponse.json();
         
         const moveSlugs = pokemonData.moves.map((m: { move: { name: string } }) => m.move.name);
-        const movesWithParallel = await fetchMovesParallel(moveSlugs, 8);
         
-        setAllMoves(movesWithParallel);
+        setTimeout(async () => {
+          const additionalSlugs = moveSlugs.slice(20);
+          const extraMoves = await fetchMovesLazy(additionalSlugs);
+          setAllMoves((prev) => [...prev, ...extraMoves]);
+        }, 2000);
         
-        // Generar set de movimientos por defecto
-        const defaultMoves = generateDefaultMoveSet(result, allMovesData);
+        const initialMoves = moveSlugs.slice(0, 20);
+        const movesWithCache = await fetchMovesLazy(initialMoves);
+        
+        setAllMoves(movesWithCache);
+        
+        const defaultMoves = generateDefaultMoveSet(result, movesWithCache);
         setSelectedMoves(defaultMoves);
       }
     } catch (searchError) {
